@@ -5,4 +5,5 @@ const nextConfig = {
   },
 }
 
-module.exports = nextConfig
+// Remplace module.exports par ceci :
+export default nextConfig;
