@@ -1,595 +1,543 @@
 'use client'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
 
 export default function Home() {
   const [scrolled, setScrolled] = useState(false)
+  const [cursor, setCursor] = useState({ x: -100, y: -100 })
+  const [cursorHover, setCursorHover] = useState(false)
+  const [visible, setVisible] = useState({})
+  const [isMobile, setIsMobile] = useState(false)
+  const observerRef = useRef(null)
+
+  const wa = (msg) => `https://wa.me/237600000000?text=${encodeURIComponent(msg)}`
 
   useEffect(() => {
-    const h = () => setScrolled(window.scrollY > 40)
-    window.addEventListener('scroll', h)
-    return () => window.removeEventListener('scroll', h)
+    const checkMobile = () => setIsMobile(window.innerWidth < 768)
+    checkMobile()
+    window.addEventListener('resize', checkMobile)
+
+    const onScroll = () => setScrolled(window.scrollY > 40)
+    window.addEventListener('scroll', onScroll)
+
+    const onMove = (e) => setCursor({ x: e.clientX, y: e.clientY })
+    window.addEventListener('mousemove', onMove)
+
+    const interactives = document.querySelectorAll('a, button, [data-hover]')
+    interactives.forEach(el => {
+      el.addEventListener('mouseenter', () => setCursorHover(true))
+      el.addEventListener('mouseleave', () => setCursorHover(false))
+    })
+
+    observerRef.current = new IntersectionObserver(
+      (entries) => entries.forEach(e => {
+        if (e.isIntersecting) setVisible(v => ({ ...v, [e.target.dataset.id]: true }))
+      }),
+      { threshold: 0.15 }
+    )
+    document.querySelectorAll('[data-id]').forEach(el => observerRef.current.observe(el))
+
+    return () => {
+      window.removeEventListener('resize', checkMobile)
+      window.removeEventListener('scroll', onScroll)
+      window.removeEventListener('mousemove', onMove)
+    }
   }, [])
 
-  const wa = (msg) => `https://wa.me/237673359573?text=${encodeURIComponent(msg)}`
+  const anim = (id, delay = 0) => ({
+    opacity: visible[id] ? 1 : 0,
+    transform: visible[id] ? 'translateY(0)' : 'translateY(40px)',
+    transition: `opacity 0.7s ease ${delay}s, transform 0.7s ease ${delay}s`,
+  })
 
   const maquettes = [
-    { slug:'chez-grace-beaute',    nom:'Chez Grâce Beauté',   secteur:'Salon de coiffure',       desc:'Design élégant avec galerie, tarifs et réservation WhatsApp instantanée.',  couleur:'#8b2252', emoji:'💇‍♀️', tags:['Beauté','Galerie','WhatsApp'] },
-    { slug:'atelier-lumiere-mode', nom:'Atelier Lumière',      secteur:'Couture sur mesure',      desc:'Interface luxe sombre, catalogue de modèles et commandes en ligne.',         couleur:'#92620a', emoji:'🧵',   tags:['Mode','Commandes','Luxe']    },
-    { slug:'saveurs-du-cameroun',  nom:'Saveurs du Cameroun',  secteur:'Restaurant traditionnel', desc:'Menu du jour dynamique, carte complète et livraison WhatsApp.',              couleur:'#b83a10', emoji:'🍽️',  tags:['Restaurant','Menu','Livraison'] },
-    { slug:'techshop-yaounde',     nom:'TechShop Yaoundé',     secteur:'Électronique & Tech',     desc:'Catalogue filtrable avec badges de stock et commande directe.',              couleur:'#1558b0', emoji:'⚡',   tags:['Tech','Catalogue','Stock']   },
-    { slug:'prof-domicile-yde',    nom:'Prof à Domicile',      secteur:'Cours particuliers',      desc:'Plateforme de réservation par matière, niveau et date souhaitée.',           couleur:'#3730a3', emoji:'📖',  tags:['Éducation','Réservation']    },
+    { slug:'chez-grace-beaute',    nom:'Chez Grâce Beauté',   secteur:'Salon de coiffure',   desc:'Design élégant, galerie et réservation WhatsApp.',        couleur:'#8b2252', emoji:'💇‍♀️', tags:['Beauté','Galerie','WhatsApp'] },
+    { slug:'atelier-lumiere-mode', nom:'Atelier Lumière',      secteur:'Couture sur mesure',  desc:'Interface luxe, catalogue et commandes en ligne.',         couleur:'#92620a', emoji:'🧵',   tags:['Mode','Commandes','Luxe']    },
+    { slug:'saveurs-du-cameroun',  nom:'Saveurs du Cameroun',  secteur:'Restaurant',          desc:'Menu dynamique, carte complète et livraison WhatsApp.',    couleur:'#b83a10', emoji:'🍽️',  tags:['Menu','Livraison']           },
+    { slug:'techshop-yaounde',     nom:'TechShop Yaoundé',     secteur:'Électronique',        desc:'Catalogue filtrable, badges de stock et commande directe.',couleur:'#1558b0', emoji:'⚡',   tags:['Tech','Catalogue']           },
+    { slug:'prof-domicile-yde',    nom:'Prof à Domicile',      secteur:'Cours particuliers',  desc:'Réservation par matière, niveau et date souhaitée.',       couleur:'#3730a3', emoji:'📖',  tags:['Éducation','Réservation']    },
   ]
 
   const services = [
-    { icon:'🎨', titre:'Design sur mesure',   desc:'Chaque site est unique, créé aux couleurs et à l\'image de votre activité.' },
-    { icon:'📱', titre:'Mobile-first',         desc:'Optimisé pour les smartphones, là où vos clients vous cherchent.' },
-    { icon:'⚡', titre:'Hébergement inclus',   desc:'Hébergé sur Vercel, votre site est disponible 24h/24 sans interruption.' },
-    { icon:'💬', titre:'WhatsApp intégré',     desc:'Bouton de contact WhatsApp direct sur chaque page de votre site.' },
-    { icon:'🗄️', titre:'Contenu dynamique',   desc:'Vos prix, menus et services sont modifiables en temps réel.' },
-    { icon:'📈', titre:'SEO optimisé',         desc:'Structure pensée pour apparaître rapidement sur Google.' },
+    { emoji:'🎨', titre:'Design sur mesure',  desc:'Chaque site est unique, aux couleurs de votre activité.' },
+    { emoji:'📱', titre:'Mobile-first',        desc:'Optimisé pour les smartphones de vos clients.' },
+    { emoji:'⚡', titre:'Hébergement inclus',  desc:'Vercel — disponible 24h/24 sans coupure.' },
+    { emoji:'💬', titre:'WhatsApp intégré',    desc:'Bouton de contact direct sur chaque page.' },
+    { emoji:'🗄️', titre:'Contenu dynamique',  desc:'Prix et menus modifiables en temps réel.' },
+    { emoji:'📈', titre:'SEO optimisé',        desc:'Visible rapidement sur Google.' },
   ]
 
   const plans = [
     {
-      nom:'Vitrine', prix:'25 000', unite:'FCFA',
-      desc:'Idéal pour présenter votre activité professionnellement.',
-      features:['Design personnalisé','Responsive mobile','Hébergement 1 an inclus','Bouton WhatsApp','Formulaire de contact'],
-      highlight:false, msg:'Bonjour, je suis intéressé par le plan Vitrine à 25 000 FCFA',
+      nom:'Vitrine', prix:'25 000', unite:'FCFA', highlight:false,
+      desc:'Idéal pour présenter votre activité.',
+      color:'#6366f1',
+      features:['Design personnalisé','Responsive mobile','Hébergement 1 an','Bouton WhatsApp','Formulaire de contact'],
+      msg:'Bonjour, je suis intéressé par le plan Vitrine à 25 000 FCFA',
     },
     {
-      nom:'Pro', prix:'100 000', unite:'FCFA',
-      desc:'Parfait pour vendre vos produits et gérer vos commandes.',
+      nom:'Pro', prix:'100 000', unite:'FCFA', highlight:true,
+      desc:'Pour vendre vos produits et gérer vos commandes.',
+      color:'#ffffff',
       features:['Tout du plan Vitrine','Base de données Supabase','Formulaires de commande','Catalogue dynamique','Support 3 mois inclus'],
-      highlight:true, msg:'Bonjour, je suis intéressé par le plan Pro à 100 000 FCFA',
+      msg:'Bonjour, je suis intéressé par le plan Pro à 100 000 FCFA',
     },
     {
-      nom:'Premium', prix:'Sur devis', unite:'',
-      desc:'Solution complète avec paiement Mobile Money intégré.',
+      nom:'Premium', prix:'Sur devis', unite:'', highlight:false,
+      desc:'Solution complète avec paiement Mobile Money.',
+      color:'#6366f1',
       features:['Tout du plan Pro','Paiement CinetPay / MoMo','Tableau de bord admin','Formation incluse','Support 6 mois inclus'],
-      highlight:false, msg:'Bonjour, je voudrais un devis pour le plan Premium',
+      msg:'Bonjour, je voudrais un devis pour le plan Premium',
     },
   ]
 
+  const col = isMobile ? 1 : 3
+
+  // Styles réutilisables
+  const S = {
+    page: {
+      fontFamily: "'Inter', 'Segoe UI', Arial, sans-serif",
+      background: '#07070e',
+      color: '#f0f0f8',
+      minHeight: '100vh',
+    },
+    nav: {
+      position: 'fixed', top: 0, left: 0, right: 0, zIndex: 1000,
+      height: 68,
+      background: scrolled ? 'rgba(7,7,14,0.95)' : 'transparent',
+      backdropFilter: scrolled ? 'blur(20px)' : 'none',
+      borderBottom: scrolled ? '1px solid rgba(255,255,255,0.07)' : 'none',
+      transition: 'all 0.4s ease',
+    },
+    navIn: {
+      maxWidth: 1180, margin: '0 auto', height: '100%',
+      padding: isMobile ? '0 20px' : '0 40px',
+      display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16,
+    },
+    logo: { display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 },
+    logoIcon: {
+      width: 38, height: 38, borderRadius: 10,
+      background: 'linear-gradient(135deg,#6366f1,#a855f7)',
+      display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20,
+    },
+    logoText: {
+      fontFamily: "'Syne', 'Outfit', sans-serif",
+      fontSize: isMobile ? 16 : 19, fontWeight: 800, color: 'white',
+    },
+    logoAccent: { color: '#818cf8' },
+    navBtn: {
+      flexShrink: 0, background: '#6366f1', color: 'white',
+      padding: isMobile ? '9px 14px' : '10px 22px',
+      borderRadius: 10, fontWeight: 600,
+      fontSize: isMobile ? 13 : 14,
+      whiteSpace: 'nowrap', cursor: 'pointer',
+      border: 'none', fontFamily: 'inherit',
+      transition: 'background 0.2s, transform 0.2s',
+    },
+  }
+
   return (
-    <>
-      <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Syne:wght@700;800&display=swap');
+    <div style={S.page}>
 
-        *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
-        html { scroll-behavior: smooth; }
-        body {
-          font-family: 'Outfit', sans-serif;
-          background: #07070e;
-          color: #f0f0f8;
-          -webkit-font-smoothing: antialiased;
-          overflow-x: hidden;
-        }
-        a { text-decoration: none; color: inherit; }
-        img { display: block; max-width: 100%; }
-
-        /* ── NAVBAR ── */
-        .nb {
-          position: fixed; top:0; left:0; right:0; z-index:200;
-          height: 68px;
-          transition: background 0.4s, border-bottom 0.4s;
-        }
-        .nb.on {
-          background: rgba(7,7,14,0.94);
-          backdrop-filter: blur(18px);
-          border-bottom: 1px solid rgba(255,255,255,0.06);
-        }
-        .nb-in {
-          max-width: 1180px; margin:0 auto; height:100%;
-          padding: 0 40px;
-          display: flex; align-items: center; justify-content: space-between; gap:20px;
-        }
-        .nb-logo {
-          display: flex; align-items: center; gap:10px; flex-shrink:0;
-        }
-        .nb-icon {
-          width:36px; height:36px; border-radius:10px;
-          background: linear-gradient(135deg,#6366f1,#a855f7);
-          display:flex; align-items:center; justify-content:center; font-size:18px;
-        }
-        .nb-name {
-          font-family:'Syne',sans-serif; font-size:19px; font-weight:800; color:white;
-        }
-        .nb-name em { font-style:normal; color:#818cf8; }
-        .nb-links { display:flex; gap:32px; }
-        .nb-links a {
-          font-size:14px; font-weight:500; color:rgba(255,255,255,0.5);
-          transition: color 0.2s;
-        }
-        .nb-links a:hover { color:white; }
-        .nb-btn {
-          flex-shrink:0; background:#6366f1; color:white;
-          padding:10px 22px; border-radius:10px;
-          font-weight:600; font-size:14px; white-space:nowrap;
-          transition: background 0.2s, transform 0.2s;
-        }
-        .nb-btn:hover { background:#4f46e5; transform:translateY(-1px); }
-
-        /* ── HERO ── */
-        .hero {
-          min-height:100vh;
-          display:flex; align-items:center; justify-content:center;
-          padding: 130px 40px 90px;
-          position:relative; overflow:hidden; text-align:center;
-        }
-        .hero-g1 {
-          position:absolute; top:50%; left:50%;
-          transform:translate(-50%,-60%);
-          width:700px; height:700px;
-          background:radial-gradient(circle,rgba(99,102,241,0.16) 0%,transparent 65%);
-          pointer-events:none;
-        }
-        .hero-g2 {
-          position:absolute; top:55%; left:15%;
-          width:400px; height:400px;
-          background:radial-gradient(circle,rgba(168,85,247,0.10) 0%,transparent 65%);
-          pointer-events:none;
-        }
-        .hero-inner { position:relative; z-index:1; max-width:820px; width:100%; }
-
-        .hero-pill {
-          display:inline-flex; align-items:center; gap:8px;
-          background:rgba(99,102,241,0.12);
-          border:1px solid rgba(99,102,241,0.28);
-          color:#a5b4fc; padding:7px 20px; border-radius:50px;
-          font-size:13px; font-weight:500; margin-bottom:40px;
-        }
-        .hero-dot {
-          width:7px; height:7px; border-radius:50%; background:#6366f1;
-          animation: blink 2s infinite;
-        }
-        @keyframes blink {
-          0%,100%{ opacity:1; transform:scale(1); }
-          50%    { opacity:0.4; transform:scale(0.7); }
-        }
-
-        .hero-h1 {
-          font-family:'Syne',sans-serif;
-          font-size:72px; font-weight:800;
-          line-height:1.06; letter-spacing:-2px;
-          margin-bottom:26px; color:white;
-        }
-        .hero-h1 .gr {
-          background:linear-gradient(135deg,#818cf8,#c084fc,#f472b6);
-          -webkit-background-clip:text; -webkit-text-fill-color:transparent;
-          background-clip:text;
-        }
-        .hero-p {
-          font-size:19px; color:rgba(255,255,255,0.48);
-          line-height:1.8; font-weight:300;
-          max-width:530px; margin:0 auto 52px;
-        }
-        .hero-btns { display:flex; gap:14px; justify-content:center; flex-wrap:wrap; }
-
-        .btn-w {
-          display:inline-flex; align-items:center; justify-content:center; gap:8px;
-          background:white; color:#07070e;
-          padding:15px 34px; border-radius:12px;
-          font-weight:700; font-size:15px; white-space:nowrap;
-          transition: opacity 0.2s, transform 0.2s;
-        }
-        .btn-w:hover { opacity:0.88; transform:translateY(-2px); }
-
-        .btn-g {
-          display:inline-flex; align-items:center; justify-content:center; gap:8px;
-          border:1.5px solid rgba(255,255,255,0.14);
-          color:rgba(255,255,255,0.82);
-          padding:15px 34px; border-radius:12px;
-          font-weight:600; font-size:15px; white-space:nowrap;
-          background:rgba(255,255,255,0.03);
-          transition: border-color 0.2s, background 0.2s;
-        }
-        .btn-g:hover { border-color:rgba(255,255,255,0.38); background:rgba(255,255,255,0.07); }
-
-        /* ── STATS ── */
-        .stats {
-          border-top:1px solid rgba(255,255,255,0.06);
-          border-bottom:1px solid rgba(255,255,255,0.06);
-          background:rgba(255,255,255,0.018);
-          padding:52px 40px;
-        }
-        .stats-in {
-          max-width:860px; margin:0 auto;
-          display:grid; grid-template-columns:repeat(4,1fr); gap:16px;
-          text-align:center;
-        }
-        .sv {
-          font-family:'Syne',sans-serif;
-          font-size:46px; font-weight:800; color:white; line-height:1; margin-bottom:8px;
-        }
-        .sl { font-size:13px; font-weight:500; color:rgba(255,255,255,0.32); }
-
-        /* ── SECTION WRAPPER ── */
-        .sec { padding:110px 40px; }
-        .sec-in { max-width:1180px; margin:0 auto; }
-        .sec-dark {
-          background:rgba(255,255,255,0.014);
-          border-top:1px solid rgba(255,255,255,0.05);
-          border-bottom:1px solid rgba(255,255,255,0.05);
-        }
-
-        /* ── SECTION HEADER ── */
-        .sh { text-align:center; margin-bottom:72px; }
-        .sh.left { text-align:left; margin-bottom:56px; }
-        .lbl {
-          display:inline-block;
-          font-size:11px; font-weight:700; letter-spacing:3.5px;
-          text-transform:uppercase; color:#818cf8; margin-bottom:14px;
-        }
-        .ttl {
-          font-family:'Syne',sans-serif;
-          font-size:46px; font-weight:800; line-height:1.1; color:white;
-        }
-        .sub {
-          font-size:17px; color:rgba(255,255,255,0.38);
-          line-height:1.75; font-weight:300; margin-top:14px;
-        }
-
-        /* ── MAQUETTES ── */
-        .grid-mq {
-          display:grid;
-          grid-template-columns:repeat(3,1fr);
-          gap:22px;
-        }
-        .mq-card {
-          background:#0d0d1c;
-          border:1px solid rgba(255,255,255,0.07);
-          border-radius:20px; overflow:hidden;
-          display:flex; flex-direction:column;
-          transition: transform 0.32s, border-color 0.32s, box-shadow 0.32s;
-        }
-        .mq-card:hover {
-          transform:translateY(-10px);
-          border-color:rgba(99,102,241,0.45);
-          box-shadow:0 28px 60px rgba(0,0,0,0.55), 0 0 0 1px rgba(99,102,241,0.12);
-        }
-        .mq-prev { height:152px; display:flex; flex-direction:column; overflow:hidden; }
-        .mq-bar {
-          height:30px; display:flex; align-items:center;
-          padding:0 14px; gap:6px;
-          background:rgba(0,0,0,0.22);
-        }
-        .mq-dot { width:8px; height:8px; border-radius:50%; background:rgba(255,255,255,0.28); }
-        .mq-url { flex:1; height:5px; border-radius:3px; background:rgba(255,255,255,0.1); margin-left:8px; }
-        .mq-body-prev {
-          flex:1; display:flex; align-items:center;
-          padding:14px 18px; gap:14px;
-        }
-        .mq-emoji { font-size:36px; line-height:1; }
-        .mq-lines { flex:1; }
-        .mq-line { height:9px; border-radius:5px; background:rgba(255,255,255,0.22); margin-bottom:7px; }
-        .mq-line.s { width:52%; background:rgba(255,255,255,0.1); }
-
-        .mq-info { padding:22px; display:flex; flex-direction:column; gap:9px; flex:1; }
-        .mq-sec {
-          font-size:10px; font-weight:700; letter-spacing:2.5px;
-          text-transform:uppercase; color:rgba(255,255,255,0.28);
-        }
-        .mq-nom { font-family:'Syne',sans-serif; font-size:18px; font-weight:800; color:white; }
-        .mq-desc { font-size:13px; color:rgba(255,255,255,0.38); line-height:1.65; flex:1; }
-        .mq-tags { display:flex; flex-wrap:wrap; gap:6px; margin-top:4px; }
-        .mq-tag {
-          background:rgba(255,255,255,0.05);
-          border:1px solid rgba(255,255,255,0.08);
-          color:rgba(255,255,255,0.5);
-          padding:3px 11px; border-radius:20px;
-          font-size:11px; font-weight:600;
-        }
-        .mq-cta {
-          display:flex; align-items:center; gap:5px;
-          color:#818cf8; font-size:13px; font-weight:600; margin-top:6px;
-          transition: gap 0.2s;
-        }
-        .mq-card:hover .mq-cta { gap:10px; }
-
-        /* ── SERVICES ── */
-        .grid-sv {
-          display:grid;
-          grid-template-columns:repeat(3,1fr);
-          gap:20px;
-        }
-        .sv-card {
-          background:#0d0d1c;
-          border:1px solid rgba(255,255,255,0.07);
-          border-radius:18px; padding:32px 26px;
-          transition: border-color 0.25s, transform 0.25s;
-        }
-        .sv-card:hover { border-color:rgba(99,102,241,0.35); transform:translateY(-4px); }
-        .sv-ico {
-          width:52px; height:52px; border-radius:14px;
-          background:rgba(99,102,241,0.1);
-          border:1px solid rgba(99,102,241,0.18);
-          display:flex; align-items:center; justify-content:center;
-          font-size:24px; margin-bottom:20px;
-        }
-        .sv-ttl {
-          font-family:'Syne',sans-serif;
-          font-size:16px; font-weight:700; color:white; margin-bottom:10px;
-        }
-        .sv-desc { font-size:14px; color:rgba(255,255,255,0.38); line-height:1.72; }
-
-        /* ── PLANS ── */
-        .grid-pl {
-          display:grid;
-          grid-template-columns:repeat(3,1fr);
-          gap:24px; align-items:center;
-        }
-        .pl-card {
-          background:#0d0d1c;
-          border:1px solid rgba(255,255,255,0.07);
-          border-radius:22px; padding:36px 30px;
-          display:flex; flex-direction:column; gap:22px;
-          transition: border-color 0.25s, transform 0.25s;
-        }
-        .pl-card:hover:not(.hl) { border-color:rgba(99,102,241,0.3); }
-        .pl-card.hl {
-          background:linear-gradient(155deg,#4f46e5 0%,#7c3aed 100%);
-          border:none;
-          transform:scale(1.05);
-          box-shadow:0 0 0 1px rgba(99,102,241,0.5), 0 32px 64px rgba(99,102,241,0.28);
-        }
-        .pl-badge {
-          display:inline-block; background:rgba(255,255,255,0.18);
-          color:white; font-size:10px; font-weight:700;
-          letter-spacing:2px; text-transform:uppercase;
-          padding:5px 14px; border-radius:20px; width:fit-content;
-        }
-        .pl-nom {
-          font-size:12px; font-weight:700; letter-spacing:1.5px;
-          text-transform:uppercase; color:rgba(255,255,255,0.38); margin-bottom:6px;
-        }
-        .pl-card.hl .pl-nom { color:rgba(255,255,255,0.75); }
-        .pl-prix {
-          font-family:'Syne',sans-serif;
-          font-size:40px; font-weight:800; color:white; line-height:1;
-        }
-        .pl-unite { font-size:14px; color:rgba(255,255,255,0.38); margin-left:5px; }
-        .pl-card.hl .pl-unite { color:rgba(255,255,255,0.72); }
-        .pl-desc { font-size:14px; color:rgba(255,255,255,0.35); line-height:1.55; margin-top:6px; }
-        .pl-card.hl .pl-desc { color:rgba(255,255,255,0.78); }
-        .pl-feats { display:flex; flex-direction:column; gap:12px; }
-        .pl-feat {
-          display:flex; align-items:flex-start; gap:10px;
-          font-size:14px; color:rgba(255,255,255,0.52); line-height:1.45;
-        }
-        .pl-card.hl .pl-feat { color:rgba(255,255,255,0.92); }
-        .pl-chk {
-          width:18px; height:18px; border-radius:50%;
-          background:rgba(99,102,241,0.15);
-          border:1px solid rgba(99,102,241,0.35);
-          display:flex; align-items:center; justify-content:center;
-          font-size:10px; color:#818cf8;
-          flex-shrink:0; margin-top:1px;
-        }
-        .pl-card.hl .pl-chk { background:rgba(255,255,255,0.2); border-color:rgba(255,255,255,0.3); color:white; }
-        .pl-btn {
-          display:block; text-align:center;
-          padding:14px; border-radius:12px;
-          font-weight:700; font-size:14px;
-          background:rgba(99,102,241,0.1);
-          border:1px solid rgba(99,102,241,0.25);
-          color:#a5b4fc;
-          transition: opacity 0.2s, transform 0.2s;
-        }
-        .pl-btn:hover { opacity:0.82; transform:translateY(-1px); }
-        .pl-card.hl .pl-btn { background:white; border:none; color:#4f46e5; }
-
-        /* ── CTA ── */
-        .cta {
-          text-align:center; padding:120px 40px;
-        }
-        .cta-h {
-          font-family:'Syne',sans-serif;
-          font-size:54px; font-weight:800; line-height:1.1;
-          color:white; margin-bottom:20px; margin-top:16px;
-        }
-        .cta-h span { color:#818cf8; }
-        .cta-p {
-          font-size:18px; color:rgba(255,255,255,0.38);
-          line-height:1.8; font-weight:300;
-          max-width:490px; margin:0 auto 50px;
-        }
-        .btn-cta {
-          display:inline-flex; align-items:center; gap:10px;
-          background:white; color:#07070e;
-          padding:18px 52px; border-radius:14px;
-          font-weight:700; font-size:17px;
-          transition: opacity 0.2s, transform 0.2s;
-        }
-        .btn-cta:hover { opacity:0.88; transform:translateY(-2px); }
-        .cta-note { margin-top:22px; font-size:13px; color:rgba(255,255,255,0.18); }
-
-        /* ── FOOTER ── */
-        .ft {
-          border-top:1px solid rgba(255,255,255,0.05);
-          padding:40px 40px;
-        }
-        .ft-in {
-          max-width:1180px; margin:0 auto;
-          display:flex; justify-content:space-between;
-          align-items:center; flex-wrap:wrap; gap:20px;
-        }
-        .ft-copy { font-size:13px; color:rgba(255,255,255,0.2); }
-        .ft-links { display:flex; gap:28px; flex-wrap:wrap; }
-        .ft-links a { font-size:13px; color:rgba(255,255,255,0.22); transition:color 0.2s; }
-        .ft-links a:hover { color:rgba(255,255,255,0.6); }
-
-        /* ── WA FLOAT ── */
-        .wa {
-          position:fixed; bottom:28px; right:28px; z-index:999;
-          width:60px; height:60px; border-radius:50%;
-          background:#25D366;
-          display:flex; align-items:center; justify-content:center;
-          font-size:28px;
-          box-shadow:0 6px 28px rgba(37,211,102,0.45);
-          transition: transform 0.25s, box-shadow 0.25s;
-        }
-        .wa:hover { transform:scale(1.12); box-shadow:0 10px 36px rgba(37,211,102,0.6); }
-      `}</style>
+      {/* ── CURSEUR CUSTOM (desktop seulement) ── */}
+      {!isMobile && (
+        <div style={{
+          position: 'fixed', zIndex: 9999, pointerEvents: 'none',
+          left: cursor.x - (cursorHover ? 20 : 6),
+          top: cursor.y - (cursorHover ? 20 : 6),
+          width: cursorHover ? 40 : 12,
+          height: cursorHover ? 40 : 12,
+          borderRadius: '50%',
+          background: cursorHover ? 'transparent' : '#6366f1',
+          border: cursorHover ? '2px solid #818cf8' : 'none',
+          transition: 'all 0.15s ease',
+          mixBlendMode: 'difference',
+        }} />
+      )}
 
       {/* ── NAVBAR ── */}
-      <nav className={`nb${scrolled ? ' on' : ''}`}>
-        <div className="nb-in">
-          <div className="nb-logo">
-            <div className="nb-icon">🇨🇲</div>
-            <span className="nb-name">Kamer<em>Market</em>Hub</span>
+      <nav style={S.nav}>
+        <div style={S.navIn}>
+          <div style={S.logo}>
+            <div style={S.logoIcon}>🇨🇲</div>
+            <span style={S.logoText}>
+              Kamer<span style={S.logoAccent}>Market</span>Hub
+            </span>
           </div>
-          <div className="nb-links">
-            {[['#demos','Démos'],['#services','Services'],['#tarifs','Tarifs'],['#contact','Contact']].map(([h,l])=>(
-              <a key={l} href={h}>{l}</a>
-            ))}
-          </div>
-          <a href={wa('Bonjour, je voudrais un devis pour mon site')} target="_blank" rel="noreferrer" className="nb-btn">💬 Devis gratuit</a>
+
+          {/* Links — cachés sur mobile */}
+          {!isMobile && (
+            <div style={{ display: 'flex', gap: 32 }}>
+              {[['#demos','Démos'],['#services','Services'],['#tarifs','Tarifs'],['#contact','Contact']].map(([h,l]) => (
+                <a key={l} href={h} style={{ fontSize: 14, fontWeight: 500, color: 'rgba(255,255,255,0.5)', transition: 'color 0.2s' }}
+                  onMouseEnter={e => e.target.style.color='white'}
+                  onMouseLeave={e => e.target.style.color='rgba(255,255,255,0.5)'}
+                >{l}</a>
+              ))}
+            </div>
+          )}
+
+          <a href={wa('Bonjour, je voudrais un devis pour mon site')} target="_blank" rel="noreferrer">
+            <button style={S.navBtn}
+              onMouseEnter={e => { e.target.style.background='#4f46e5'; e.target.style.transform='translateY(-1px)'; }}
+              onMouseLeave={e => { e.target.style.background='#6366f1'; e.target.style.transform='translateY(0)'; }}
+            >💬 Devis gratuit</button>
+          </a>
         </div>
       </nav>
 
       {/* ── HERO ── */}
-      <section className="hero">
-        <div className="hero-g1"/><div className="hero-g2"/>
-        <div className="hero-inner">
-          <div className="hero-pill"><span className="hero-dot"/>Agence Web · Yaoundé, Cameroun</div>
-          <h1 className="hero-h1">
-            Votre commerce mérite<br/>
-            <span className="gr">un site qui vend</span>
+      <section style={{
+        minHeight: '100vh',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        padding: isMobile ? '110px 24px 80px' : '130px 40px 100px',
+        position: 'relative', overflow: 'hidden', textAlign: 'center',
+      }}>
+        {/* Glow */}
+        <div style={{ position:'absolute', top:'40%', left:'50%', transform:'translate(-50%,-50%)', width: isMobile ? 300 : 700, height: isMobile ? 300 : 700, background:'radial-gradient(circle,rgba(99,102,241,0.18) 0%,transparent 65%)', pointerEvents:'none' }} />
+
+        <div style={{ position:'relative', zIndex:1, maxWidth:820, width:'100%',
+          animation: 'fadeUp 0.9s ease forwards',
+        }}>
+          {/* Pill */}
+          <div style={{
+            display:'inline-flex', alignItems:'center', gap:8,
+            background:'rgba(99,102,241,0.12)', border:'1px solid rgba(99,102,241,0.28)',
+            color:'#a5b4fc', padding:'8px 20px', borderRadius:50,
+            fontSize:13, fontWeight:500, marginBottom:36,
+          }}>
+            <span style={{ width:7, height:7, borderRadius:'50%', background:'#6366f1', animation:'blink 2s infinite', display:'inline-block' }} />
+            Agence Web · Yaoundé, Cameroun
+          </div>
+
+          <h1 style={{
+            fontFamily: "'Syne', 'Outfit', sans-serif",
+            fontSize: isMobile ? 38 : 72,
+            fontWeight: 800, lineHeight: 1.06,
+            letterSpacing: isMobile ? '-0.5px' : '-2px',
+            marginBottom: 24, color: 'white',
+          }}>
+            Votre commerce mérite<br />
+            <span style={{
+              background: 'linear-gradient(135deg,#818cf8,#c084fc,#f472b6)',
+              backgroundSize: '200% 200%',
+              WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
+              backgroundClip: 'text',
+              animation: 'gradientShift 4s ease infinite',
+            }}>un site qui vend</span>
           </h1>
-          <p className="hero-p">Sites vitrines professionnels pour commerçants de Yaoundé. Design moderne, hébergement inclus, livré en 72h.</p>
-          <div className="hero-btns">
-            <a href="#demos" className="btn-w">Voir les démos →</a>
-            <a href={wa('Bonjour KamerMarketHub ! Je voudrais un site pour mon commerce.')} target="_blank" rel="noreferrer" className="btn-g">💬 Nous contacter</a>
+
+          <p style={{
+            fontSize: isMobile ? 16 : 19,
+            color: 'rgba(255,255,255,0.5)', lineHeight: 1.8,
+            fontWeight: 300, maxWidth: 540, margin: '0 auto 52px',
+          }}>
+            Sites vitrines professionnels pour commerçants de Yaoundé. Design moderne, hébergement inclus, livré en 72h.
+          </p>
+
+          <div style={{ display:'flex', gap:14, justifyContent:'center', flexWrap:'wrap', flexDirection: isMobile ? 'column' : 'row', alignItems: isMobile ? 'stretch' : 'center' }}>
+            <a href="#demos" style={{
+              display:'flex', alignItems:'center', justifyContent:'center', gap:8,
+              background:'white', color:'#07070e',
+              padding:'15px 36px', borderRadius:12,
+              fontWeight:700, fontSize:15, fontFamily:'inherit',
+              transition:'opacity 0.2s, transform 0.2s',
+            }}
+              onMouseEnter={e => { e.currentTarget.style.opacity='0.88'; e.currentTarget.style.transform='translateY(-2px)'; }}
+              onMouseLeave={e => { e.currentTarget.style.opacity='1'; e.currentTarget.style.transform='translateY(0)'; }}
+            >Voir les démos →</a>
+
+            <a href={wa('Bonjour KamerMarketHub ! Je voudrais un site pour mon commerce.')} target="_blank" rel="noreferrer" style={{
+              display:'flex', alignItems:'center', justifyContent:'center', gap:8,
+              border:'1.5px solid rgba(255,255,255,0.15)',
+              color:'rgba(255,255,255,0.85)',
+              padding:'15px 36px', borderRadius:12,
+              fontWeight:600, fontSize:15, fontFamily:'inherit',
+              background:'rgba(255,255,255,0.03)',
+              transition:'border-color 0.2s, background 0.2s',
+            }}
+              onMouseEnter={e => { e.currentTarget.style.borderColor='rgba(255,255,255,0.4)'; e.currentTarget.style.background='rgba(255,255,255,0.07)'; }}
+              onMouseLeave={e => { e.currentTarget.style.borderColor='rgba(255,255,255,0.15)'; e.currentTarget.style.background='rgba(255,255,255,0.03)'; }}
+            >💬 Nous contacter</a>
           </div>
         </div>
       </section>
 
       {/* ── STATS ── */}
-      <div className="stats">
-        <div className="stats-in">
-          {[['5','Maquettes démo'],['72h','Délai de livraison'],['100%','Mobile responsive'],['0 F','Devis gratuit']].map(([v,l])=>(
-            <div key={l}><div className="sv">{v}</div><div className="sl">{l}</div></div>
+      <div data-id="stats" style={{
+        borderTop:'1px solid rgba(255,255,255,0.06)',
+        borderBottom:'1px solid rgba(255,255,255,0.06)',
+        background:'rgba(255,255,255,0.02)',
+        padding: isMobile ? '40px 24px' : '52px 40px',
+        ...anim('stats'),
+      }}>
+        <div style={{
+          maxWidth:860, margin:'0 auto',
+          display:'grid',
+          gridTemplateColumns: isMobile ? '1fr 1fr' : 'repeat(4,1fr)',
+          gap: isMobile ? '28px 16px' : 16,
+          textAlign:'center',
+        }}>
+          {[['5','Maquettes démo'],['72h','Délai de livraison'],['100%','Mobile responsive'],['0 F','Devis gratuit']].map(([v,l]) => (
+            <div key={l}>
+              <div style={{ fontFamily:"'Syne','Outfit',sans-serif", fontSize: isMobile ? 32 : 46, fontWeight:800, color:'white', lineHeight:1, marginBottom:8 }}>{v}</div>
+              <div style={{ fontSize:13, fontWeight:500, color:'rgba(255,255,255,0.32)' }}>{l}</div>
+            </div>
           ))}
         </div>
       </div>
 
       {/* ── MAQUETTES ── */}
-      <section id="demos" className="sec">
-        <div className="sec-in">
-          <div className="sh left">
-            <span className="lbl">Sites de démonstration</span>
-            <h2 className="ttl">5 secteurs,<br/>5 maquettes live</h2>
-            <p className="sub" style={{maxWidth:420}}>Cliquez pour voir chaque site en action — ce sera le vôtre, adapté à votre activité.</p>
-          </div>
-          <div className="grid-mq">
-            {maquettes.map(m=>(
-              <Link key={m.slug} href={`/${m.slug}`} className="mq-card">
-                <div className="mq-prev" style={{background:m.couleur}}>
-                  <div className="mq-bar"><span className="mq-dot"/><span className="mq-dot"/><span className="mq-dot"/><span className="mq-url"/></div>
-                  <div className="mq-body-prev">
-                    <span className="mq-emoji">{m.emoji}</span>
-                    <div className="mq-lines"><div className="mq-line"/><div className="mq-line s"/></div>
+      <section id="demos" style={{ padding: isMobile ? '72px 24px' : '110px 40px', maxWidth:1180, margin:'0 auto' }}>
+        <div data-id="mq-head" style={{ marginBottom: isMobile ? 44 : 64, ...anim('mq-head') }}>
+          <span style={{ fontSize:11, fontWeight:700, letterSpacing:'3.5px', textTransform:'uppercase', color:'#818cf8', display:'block', marginBottom:14 }}>Sites de démonstration</span>
+          <h2 style={{ fontFamily:"'Syne','Outfit',sans-serif", fontSize: isMobile ? 28 : 46, fontWeight:800, lineHeight:1.1, color:'white', marginBottom:14 }}>
+            5 secteurs,<br/>5 maquettes live
+          </h2>
+          <p style={{ fontSize: isMobile ? 15 : 17, color:'rgba(255,255,255,0.38)', lineHeight:1.75, fontWeight:300, maxWidth:420 }}>
+            Cliquez pour voir chaque site en action — ce sera le vôtre.
+          </p>
+        </div>
+
+        <div style={{ display:'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(3,1fr)', gap:22 }}>
+          {maquettes.map((m, i) => (
+            <div key={m.slug} data-id={`mq-${i}`} style={{ ...anim(`mq-${i}`, i * 0.1) }}>
+              <Link href={`/${m.slug}`} style={{ display:'block', textDecoration:'none', color:'inherit' }}>
+                <div style={{
+                  background:'#0d0d1c', border:'1px solid rgba(255,255,255,0.07)',
+                  borderRadius:20, overflow:'hidden',
+                  transition:'transform 0.32s, border-color 0.32s, box-shadow 0.32s',
+                  cursor:'pointer',
+                }}
+                  onMouseEnter={e => { e.currentTarget.style.transform='translateY(-10px)'; e.currentTarget.style.borderColor='rgba(99,102,241,0.5)'; e.currentTarget.style.boxShadow='0 28px 60px rgba(0,0,0,0.55)'; }}
+                  onMouseLeave={e => { e.currentTarget.style.transform='translateY(0)'; e.currentTarget.style.borderColor='rgba(255,255,255,0.07)'; e.currentTarget.style.boxShadow='none'; }}
+                >
+                  {/* Preview */}
+                  <div style={{ height:148, background:m.couleur, display:'flex', flexDirection:'column', overflow:'hidden' }}>
+                    <div style={{ height:28, background:'rgba(0,0,0,0.2)', display:'flex', alignItems:'center', padding:'0 12px', gap:5 }}>
+                      {[1,2,3].map(k => <span key={k} style={{ width:8, height:8, borderRadius:'50%', background:'rgba(255,255,255,0.28)' }} />)}
+                      <span style={{ flex:1, height:5, borderRadius:3, background:'rgba(255,255,255,0.1)', marginLeft:8 }} />
+                    </div>
+                    <div style={{ flex:1, display:'flex', alignItems:'center', padding:'12px 18px', gap:14 }}>
+                      <span style={{ fontSize:34, lineHeight:1, animation:'float 3s ease-in-out infinite' }}>{m.emoji}</span>
+                      <div style={{ flex:1 }}>
+                        <div style={{ height:9, borderRadius:5, background:'rgba(255,255,255,0.25)', marginBottom:7 }} />
+                        <div style={{ height:7, borderRadius:4, background:'rgba(255,255,255,0.12)', width:'55%' }} />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Info */}
+                  <div style={{ padding:22, display:'flex', flexDirection:'column', gap:9 }}>
+                    <p style={{ fontSize:10, fontWeight:700, letterSpacing:'2.5px', textTransform:'uppercase', color:'rgba(255,255,255,0.28)' }}>{m.secteur}</p>
+                    <h3 style={{ fontFamily:"'Syne','Outfit',sans-serif", fontSize:18, fontWeight:800, color:'white' }}>{m.nom}</h3>
+                    <p style={{ fontSize:13, color:'rgba(255,255,255,0.38)', lineHeight:1.65 }}>{m.desc}</p>
+                    <div style={{ display:'flex', flexWrap:'wrap', gap:6, marginTop:4 }}>
+                      {m.tags.map(t => (
+                        <span key={t} style={{ background:'rgba(255,255,255,0.05)', border:'1px solid rgba(255,255,255,0.09)', color:'rgba(255,255,255,0.5)', padding:'3px 11px', borderRadius:20, fontSize:11, fontWeight:600 }}>{t}</span>
+                      ))}
+                    </div>
+                    <div style={{ display:'flex', alignItems:'center', gap:5, color:'#818cf8', fontSize:13, fontWeight:600, marginTop:6 }}>
+                      Voir la démo <span>→</span>
+                    </div>
                   </div>
                 </div>
-                <div className="mq-info">
-                  <p className="mq-sec">{m.secteur}</p>
-                  <h3 className="mq-nom">{m.nom}</h3>
-                  <p className="mq-desc">{m.desc}</p>
-                  <div className="mq-tags">{m.tags.map(t=><span key={t} className="mq-tag">{t}</span>)}</div>
-                  <div className="mq-cta">Voir la démo <span>→</span></div>
-                </div>
               </Link>
-            ))}
-          </div>
+            </div>
+          ))}
         </div>
       </section>
 
       {/* ── SERVICES ── */}
-      <div className="sec-dark" id="services">
-        <div className="sec"><div className="sec-in">
-          <div className="sh">
-            <span className="lbl">Ce qu'on inclut</span>
-            <h2 className="ttl">Tout dans votre site</h2>
-            <p className="sub">Chaque site livré inclut ces fonctionnalités sans supplément.</p>
+      <div style={{ background:'rgba(255,255,255,0.014)', borderTop:'1px solid rgba(255,255,255,0.05)', borderBottom:'1px solid rgba(255,255,255,0.05)' }} id="services">
+        <div style={{ padding: isMobile ? '72px 24px' : '110px 40px', maxWidth:1180, margin:'0 auto' }}>
+          <div data-id="sv-head" style={{ textAlign:'center', marginBottom: isMobile ? 48 : 72, ...anim('sv-head') }}>
+            <span style={{ fontSize:11, fontWeight:700, letterSpacing:'3.5px', textTransform:'uppercase', color:'#818cf8', display:'block', marginBottom:14 }}>Ce qu'on inclut</span>
+            <h2 style={{ fontFamily:"'Syne','Outfit',sans-serif", fontSize: isMobile ? 28 : 46, fontWeight:800, color:'white', lineHeight:1.1 }}>Tout dans votre site</h2>
+            <p style={{ fontSize: isMobile ? 15 : 17, color:'rgba(255,255,255,0.38)', lineHeight:1.75, fontWeight:300, marginTop:14 }}>
+              Chaque site livré inclut ces fonctionnalités sans supplément.
+            </p>
           </div>
-          <div className="grid-sv">
-            {services.map(s=>(
-              <div key={s.titre} className="sv-card">
-                <div className="sv-ico">{s.icon}</div>
-                <h3 className="sv-ttl">{s.titre}</h3>
-                <p className="sv-desc">{s.desc}</p>
+          <div style={{ display:'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(3,1fr)', gap:20 }}>
+            {services.map((s, i) => (
+              <div key={s.titre} data-id={`sv-${i}`} style={{
+                background:'#0d0d1c', border:'1px solid rgba(255,255,255,0.07)',
+                borderRadius:18, padding: isMobile ? '24px 20px' : '32px 26px',
+                transition:'border-color 0.25s, transform 0.25s',
+                ...anim(`sv-${i}`, i * 0.08),
+              }}
+                onMouseEnter={e => { e.currentTarget.style.borderColor='rgba(99,102,241,0.35)'; e.currentTarget.style.transform='translateY(-4px)'; }}
+                onMouseLeave={e => { e.currentTarget.style.borderColor='rgba(255,255,255,0.07)'; e.currentTarget.style.transform='translateY(0)'; }}
+              >
+                <div style={{
+                  width:52, height:52, borderRadius:14,
+                  background:'rgba(99,102,241,0.1)', border:'1px solid rgba(99,102,241,0.18)',
+                  display:'flex', alignItems:'center', justifyContent:'center',
+                  fontSize:24, marginBottom:20,
+                }}>{s.emoji}</div>
+                <h3 style={{ fontFamily:"'Syne','Outfit',sans-serif", fontSize:16, fontWeight:700, color:'white', marginBottom:10 }}>{s.titre}</h3>
+                <p style={{ fontSize:14, color:'rgba(255,255,255,0.38)', lineHeight:1.72 }}>{s.desc}</p>
               </div>
             ))}
           </div>
-        </div></div>
+        </div>
       </div>
 
       {/* ── TARIFS ── */}
-      <section id="tarifs" className="sec">
-        <div className="sec-in">
-          <div className="sh">
-            <span className="lbl">Transparent & simple</span>
-            <h2 className="ttl">Nos Tarifs</h2>
-            <p className="sub">Choisissez l'offre adaptée à votre projet.</p>
-          </div>
-          <div className="grid-pl">
-            {plans.map(p=>(
-              <div key={p.nom} className={`pl-card${p.highlight?' hl':''}`}>
-                {p.highlight && <span className="pl-badge">⭐ Le plus populaire</span>}
-                <div>
-                  <p className="pl-nom">{p.nom}</p>
-                  <div style={{display:'flex',alignItems:'baseline',gap:4,flexWrap:'wrap'}}>
-                    <span className="pl-prix">{p.prix}</span>
-                    {p.unite && <span className="pl-unite">{p.unite}</span>}
-                  </div>
-                  <p className="pl-desc">{p.desc}</p>
+      <section id="tarifs" style={{ padding: isMobile ? '72px 24px' : '110px 40px', maxWidth:1100, margin:'0 auto' }}>
+        <div data-id="pl-head" style={{ textAlign:'center', marginBottom: isMobile ? 48 : 72, ...anim('pl-head') }}>
+          <span style={{ fontSize:11, fontWeight:700, letterSpacing:'3.5px', textTransform:'uppercase', color:'#818cf8', display:'block', marginBottom:14 }}>Transparent & simple</span>
+          <h2 style={{ fontFamily:"'Syne','Outfit',sans-serif", fontSize: isMobile ? 28 : 46, fontWeight:800, color:'white', lineHeight:1.1 }}>Nos Tarifs</h2>
+          <p style={{ fontSize: isMobile ? 15 : 17, color:'rgba(255,255,255,0.38)', lineHeight:1.75, fontWeight:300, marginTop:14 }}>
+            Choisissez l'offre adaptée à votre projet.
+          </p>
+        </div>
+
+        <div style={{
+          display:'grid',
+          gridTemplateColumns: isMobile ? '1fr' : 'repeat(3,1fr)',
+          gap: isMobile ? 20 : 24,
+          alignItems:'center',
+          maxWidth: isMobile ? 480 : '100%',
+          marginLeft:'auto', marginRight:'auto',
+        }}>
+          {plans.map((p, i) => (
+            <div key={p.nom} data-id={`pl-${i}`} style={{
+              background: p.highlight ? 'linear-gradient(155deg,#4f46e5 0%,#7c3aed 100%)' : '#0d0d1c',
+              border: p.highlight ? 'none' : '1px solid rgba(255,255,255,0.08)',
+              borderRadius:22,
+              padding: isMobile ? '28px 22px' : '36px 30px',
+              display:'flex', flexDirection:'column', gap:22,
+              transform: (!isMobile && p.highlight) ? 'scale(1.05)' : 'scale(1)',
+              boxShadow: p.highlight ? '0 0 0 1px rgba(99,102,241,0.5), 0 32px 64px rgba(99,102,241,0.28)' : 'none',
+              transition:'transform 0.3s, box-shadow 0.3s',
+              ...anim(`pl-${i}`, i * 0.12),
+            }}>
+              {p.highlight && (
+                <span style={{ display:'inline-block', background:'rgba(255,255,255,0.18)', color:'white', fontSize:10, fontWeight:700, letterSpacing:2, textTransform:'uppercase', padding:'5px 14px', borderRadius:20, width:'fit-content' }}>
+                  ⭐ Le plus populaire
+                </span>
+              )}
+
+              <div>
+                <p style={{ fontSize:12, fontWeight:700, letterSpacing:'1.5px', textTransform:'uppercase', color: p.highlight ? 'rgba(255,255,255,0.7)' : 'rgba(255,255,255,0.35)', marginBottom:8 }}>{p.nom}</p>
+                <div style={{ display:'flex', alignItems:'baseline', gap:5, flexWrap:'wrap', marginBottom:10 }}>
+                  <span style={{ fontFamily:"'Syne','Outfit',sans-serif", fontSize:38, fontWeight:800, color:'white', lineHeight:1 }}>{p.prix}</span>
+                  {p.unite && <span style={{ fontSize:14, color: p.highlight ? 'rgba(255,255,255,0.7)' : 'rgba(255,255,255,0.35)' }}>{p.unite}</span>}
                 </div>
-                <ul className="pl-feats">
-                  {p.features.map(f=>(
-                    <li key={f} className="pl-feat">
-                      <span className="pl-chk">✓</span>{f}
-                    </li>
-                  ))}
-                </ul>
-                <a href={wa(p.msg)} target="_blank" rel="noreferrer" className="pl-btn">Choisir ce plan →</a>
+                <p style={{ fontSize:14, color: p.highlight ? 'rgba(255,255,255,0.78)' : 'rgba(255,255,255,0.35)', lineHeight:1.55 }}>{p.desc}</p>
               </div>
-            ))}
-          </div>
+
+              <ul style={{ display:'flex', flexDirection:'column', gap:12, listStyle:'none' }}>
+                {p.features.map(f => (
+                  <li key={f} style={{ display:'flex', alignItems:'flex-start', gap:10, fontSize:14, color: p.highlight ? 'rgba(255,255,255,0.92)' : 'rgba(255,255,255,0.52)', lineHeight:1.45 }}>
+                    <span style={{
+                      width:20, height:20, borderRadius:'50%', flexShrink:0, marginTop:1,
+                      background: p.highlight ? 'rgba(255,255,255,0.2)' : 'rgba(99,102,241,0.15)',
+                      border: p.highlight ? '1px solid rgba(255,255,255,0.3)' : '1px solid rgba(99,102,241,0.35)',
+                      display:'flex', alignItems:'center', justifyContent:'center',
+                      fontSize:11, color: p.highlight ? 'white' : '#818cf8', fontWeight:700,
+                    }}>✓</span>
+                    {f}
+                  </li>
+                ))}
+              </ul>
+
+              <a href={wa(p.msg)} target="_blank" rel="noreferrer" style={{
+                display:'block', textAlign:'center',
+                padding:'14px', borderRadius:12,
+                fontWeight:700, fontSize:14, fontFamily:'inherit',
+                background: p.highlight ? 'white' : 'rgba(99,102,241,0.1)',
+                border: p.highlight ? 'none' : '1px solid rgba(99,102,241,0.25)',
+                color: p.highlight ? '#4f46e5' : '#a5b4fc',
+                transition:'opacity 0.2s, transform 0.2s',
+              }}
+                onMouseEnter={e => { e.currentTarget.style.opacity='0.85'; e.currentTarget.style.transform='translateY(-1px)'; }}
+                onMouseLeave={e => { e.currentTarget.style.opacity='1'; e.currentTarget.style.transform='translateY(0)'; }}
+              >Choisir ce plan →</a>
+            </div>
+          ))}
         </div>
       </section>
 
       {/* ── CONTACT ── */}
-      <div className="sec-dark" id="contact">
-        <div className="sec-in">
-          <div className="cta">
-            <span className="lbl">Prêt à commencer ?</span>
-            <h2 className="cta-h">Votre site en<br/><span>72 heures</span></h2>
-            <p className="cta-p">Dites-nous ce que vous faites sur WhatsApp. On s'occupe du reste.</p>
-            <a href={wa('Bonjour KamerMarketHub ! Je voudrais un site pour mon commerce.')} target="_blank" rel="noreferrer" className="btn-cta">💬 Démarrer sur WhatsApp</a>
-            <p className="cta-note">Réponse sous 1h · Devis gratuit · Sans engagement</p>
-          </div>
+      <div id="contact" style={{ background:'rgba(255,255,255,0.014)', borderTop:'1px solid rgba(255,255,255,0.05)' }}>
+        <div data-id="cta" style={{
+          textAlign:'center', padding: isMobile ? '72px 24px' : '120px 40px',
+          maxWidth:1180, margin:'0 auto',
+          ...anim('cta'),
+        }}>
+          <span style={{ fontSize:11, fontWeight:700, letterSpacing:'3.5px', textTransform:'uppercase', color:'#818cf8', display:'block', marginBottom:14 }}>Prêt à commencer ?</span>
+          <h2 style={{ fontFamily:"'Syne','Outfit',sans-serif", fontSize: isMobile ? 32 : 54, fontWeight:800, color:'white', lineHeight:1.1, marginBottom:20, marginTop:4 }}>
+            Votre site en<br/><span style={{ color:'#818cf8' }}>72 heures</span>
+          </h2>
+          <p style={{ fontSize: isMobile ? 15 : 18, color:'rgba(255,255,255,0.38)', lineHeight:1.8, fontWeight:300, maxWidth:490, margin:'0 auto 50px' }}>
+            Dites-nous ce que vous faites sur WhatsApp. On s'occupe du reste.
+          </p>
+          <a href={wa('Bonjour KamerMarketHub ! Je voudrais un site pour mon commerce.')} target="_blank" rel="noreferrer" style={{
+            display:'inline-flex', alignItems:'center', gap:10,
+            background:'white', color:'#07070e',
+            padding: isMobile ? '15px 32px' : '18px 52px',
+            borderRadius:14, fontWeight:700,
+            fontSize: isMobile ? 15 : 17,
+            fontFamily:'inherit',
+            transition:'opacity 0.2s, transform 0.2s',
+            width: isMobile ? '100%' : 'auto',
+            justifyContent:'center',
+            maxWidth: isMobile ? 400 : 'none',
+          }}
+            onMouseEnter={e => { e.currentTarget.style.opacity='0.88'; e.currentTarget.style.transform='translateY(-2px)'; }}
+            onMouseLeave={e => { e.currentTarget.style.opacity='1'; e.currentTarget.style.transform='translateY(0)'; }}
+          >💬 Démarrer sur WhatsApp</a>
+          <p style={{ marginTop:22, fontSize:13, color:'rgba(255,255,255,0.18)' }}>Réponse sous 1h · Devis gratuit · Sans engagement</p>
         </div>
       </div>
 
       {/* ── FOOTER ── */}
-      <footer className="ft">
-        <div className="ft-in">
-          <div className="nb-logo">
-            <div className="nb-icon" style={{width:30,height:30,borderRadius:8,fontSize:16}}>🇨🇲</div>
-            <span className="nb-name" style={{fontSize:16}}>Kamer<em>Market</em>Hub</span>
+      <footer style={{ borderTop:'1px solid rgba(255,255,255,0.05)', padding: isMobile ? '32px 24px' : '40px 40px' }}>
+        <div style={{
+          maxWidth:1180, margin:'0 auto',
+          display:'flex',
+          flexDirection: isMobile ? 'column' : 'row',
+          justifyContent:'space-between', alignItems:'center',
+          gap: isMobile ? 16 : 20,
+          textAlign: isMobile ? 'center' : 'left',
+        }}>
+          <div style={{ display:'flex', alignItems:'center', gap:10 }}>
+            <div style={{ width:30, height:30, borderRadius:8, background:'linear-gradient(135deg,#6366f1,#a855f7)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:16 }}>🇨🇲</div>
+            <span style={{ fontFamily:"'Syne','Outfit',sans-serif", fontSize:16, fontWeight:800, color:'white' }}>
+              Kamer<span style={{ color:'#818cf8' }}>Market</span>Hub
+            </span>
           </div>
-          <p className="ft-copy">© 2026 KamerMarketHub by Brother Ced· Yaoundé, Cameroun</p>
-          <div className="ft-links">
-            {[['#demos','Démos'],['#services','Services'],['#tarifs','Tarifs'],['#contact','Contact']].map(([h,l])=>(
-              <a key={l} href={h}>{l}</a>
+          <p style={{ fontSize:13, color:'rgba(255,255,255,0.2)' }}>© 2026 KamerMarketHub · Yaoundé, Cameroun</p>
+          <div style={{ display:'flex', gap:28, flexWrap:'wrap', justifyContent:'center' }}>
+            {[['#demos','Démos'],['#services','Services'],['#tarifs','Tarifs'],['#contact','Contact']].map(([h,l]) => (
+              <a key={l} href={h} style={{ fontSize:13, color:'rgba(255,255,255,0.22)', transition:'color 0.2s' }}
+                onMouseEnter={e => e.target.style.color='rgba(255,255,255,0.6)'}
+                onMouseLeave={e => e.target.style.color='rgba(255,255,255,0.22)'}
+              >{l}</a>
             ))}
           </div>
         </div>
       </footer>
 
       {/* ── WHATSAPP FLOTTANT ── */}
-      <a href={wa('Bonjour, je veux un site pour mon commerce')} target="_blank" rel="noreferrer" className="wa" title="Nous contacter">💬</a>
-    </>
+      <a href={wa('Bonjour, je veux un site pour mon commerce')} target="_blank" rel="noreferrer"
+        title="Nous contacter sur WhatsApp"
+        style={{
+          position:'fixed', bottom:28, right:28, zIndex:999,
+          width:60, height:60, borderRadius:'50%',
+          background:'#25D366',
+          display:'flex', alignItems:'center', justifyContent:'center',
+          fontSize:28,
+          boxShadow:'0 6px 28px rgba(37,211,102,0.45)',
+          transition:'transform 0.25s, box-shadow 0.25s',
+          animation:'float 3s ease-in-out infinite',
+        }}
+        onMouseEnter={e => { e.currentTarget.style.transform='scale(1.15)'; e.currentTarget.style.boxShadow='0 10px 36px rgba(37,211,102,0.6)'; }}
+        onMouseLeave={e => { e.currentTarget.style.transform='scale(1)'; e.currentTarget.style.boxShadow='0 6px 28px rgba(37,211,102,0.45)'; }}
+      >💬</a>
+
+    </div>
   )
 }
