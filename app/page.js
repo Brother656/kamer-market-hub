@@ -11,7 +11,7 @@ export default function Home() {
     return () => window.removeEventListener('scroll', h)
   }, [])
 
-  const wa = (msg) => `https://wa.me/237600000000?text=${encodeURIComponent(msg)}`
+  const wa = (msg) => `https://wa.me/237673359573?text=${encodeURIComponent(msg)}`
 
   const maquettes = [
     { slug:'chez-grace-beaute',    nom:'Chez Grâce Beauté',   secteur:'Salon de coiffure',       desc:'Design élégant avec galerie, tarifs et réservation WhatsApp instantanée.',  couleur:'#8b2252', emoji:'💇‍♀️', tags:['Beauté','Galerie','WhatsApp'] },
@@ -579,7 +579,7 @@ export default function Home() {
             <div className="nb-icon" style={{width:30,height:30,borderRadius:8,fontSize:16}}>🇨🇲</div>
             <span className="nb-name" style={{fontSize:16}}>Kamer<em>Market</em>Hub</span>
           </div>
-          <p className="ft-copy">© 2026 KamerMarketHub · Yaoundé, Cameroun</p>
+          <p className="ft-copy">© 2026 KamerMarketHub by Brother Ced· Yaoundé, Cameroun</p>
           <div className="ft-links">
             {[['#demos','Démos'],['#services','Services'],['#tarifs','Tarifs'],['#contact','Contact']].map(([h,l])=>(
               <a key={l} href={h}>{l}</a>
