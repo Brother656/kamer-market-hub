@@ -1,0 +1,2 @@
+export const metadata = { title: 'TechShop Yaoundé — Smartphones & Électronique', description: 'Vente de smartphones, laptops et accessoires à Yaoundé. Produits authentiques garantis.' }
+export default function Layout({ children }) { return children }

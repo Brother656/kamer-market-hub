@@ -1,0 +1,2 @@
+export const metadata = { title: 'Saveurs du Cameroun — Restaurant traditionnel Yaoundé', description: 'Restaurant camerounais traditionnel à Yaoundé. Ndolé, Eru, Poulet braisé. Livraison disponible.' }
+export default function Layout({ children }) { return children }

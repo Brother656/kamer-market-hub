@@ -1,0 +1,2 @@
+export const metadata = { title: 'Atelier Lumière Mode — Couture sur mesure Yaoundé', description: 'Couture sur mesure à Yaoundé. Robes, tailleurs, boubous. Commandez en ligne.' }
+export default function Layout({ children }) { return children }

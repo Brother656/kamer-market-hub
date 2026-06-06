@@ -1,0 +1,2 @@
+export const metadata = { title: 'Prof à Domicile Yaoundé — Cours particuliers', description: 'Cours particuliers à domicile à Yaoundé. Maths, Physique, Français, Anglais. Réservation en ligne.' }
+export default function Layout({ children }) { return children }
