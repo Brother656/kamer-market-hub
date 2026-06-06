@@ -1,7 +1,9 @@
 export const metadata = {
   title: 'KamerMarketHub — Sites vitrines professionnels à Yaoundé',
-  description: 'Agence web à Yaoundé. Sites vitrines modernes pour commerçants camerounais. Design, hébergement, livraison en 72h.',
+  description: 'Agence web à Yaoundé. Nous créons des sites vitrines modernes pour commerçants camerounais. Design, hébergement, livraison en 72h.',
 }
+
+import { Analytics } from '@vercel/analytics/react';
 
 export default function RootLayout({ children }) {
   return (
@@ -9,7 +11,10 @@ export default function RootLayout({ children }) {
       <head>
         <meta name="viewport" content="width=device-width, initial-scale=1" />
       </head>
-      <body>{children}</body>
+      <body>
+        {children}
+        <Analytics />
+      </body>
     </html>
   )
 }
