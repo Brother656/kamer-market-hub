@@ -4,7 +4,7 @@ export const metadata = {
 }
 
 import { Analytics } from '@vercel/analytics/react'
-import './globals.css'
+import './globals.css'; // Assure-toi que le chemin est correct selon où se trouve ton fichier
 
 export default function RootLayout({ children }) {
   return (
