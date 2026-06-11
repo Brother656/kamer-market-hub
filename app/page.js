@@ -134,7 +134,7 @@ export default function Home() {
         <div style={S.navIn}>
           <div style={{ display:'flex', alignItems:'center', gap:10, flexShrink:0 }}>
             <div style={S.logoIcon}>🇨🇲</div>
-            <span style={S.logoText}>Kamer<span style={{ color:'#818cf8' }}>Market</span>Hub</span>
+            <span style={S.logoText}>K<span style={{ color:'#818cf8' }}>M</span>H</span>
           </div>
           {!isMobile && (
             <div style={{ display:'flex', gap:32 }}>
@@ -398,7 +398,7 @@ export default function Home() {
               Kamer<span style={{ color:'#818cf8' }}>Market</span>Hub
             </span>
           </div>
-          <p style={{ fontSize:13, color:'rgba(255,255,255,0.2)' }}>© 2026 KamerMarketHub · Yaoundé, Cameroun</p>
+          <p style={{ fontSize:13, color:'rgba(255,255,255,0.2)' }}>© 2026 KamerMarketHub · by Brother Ced · Yaoundé, Cameroun</p>
           <div style={{ display:'flex', gap:24, flexWrap:'wrap', justifyContent:'center' }}>
             {[['#demos','Démos'],['#services','Services'],['#communaute','Communauté'],['#tarifs','Tarifs'],['#contact','Contact']].map(([h,l]) => (
               <a key={l} href={h} style={{ fontSize:13, color:'rgba(255,255,255,0.22)', transition:'color 0.2s' }}
